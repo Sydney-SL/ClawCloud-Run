@@ -884,7 +884,15 @@ class AutoLogin:
                     sys.exit(1)
                 
                 time.sleep(3)
-                page.wait_for_load_state('networkidle', timeout=120000)
+                
+                # === 修改这里：将 networkidle 替换为 load，并捕获可能的加载超时 ===
+                try:
+                    # 最多等30秒基础结构加载，即使网络没完全闲置也继续往下走
+                    page.wait_for_load_state('load', timeout=30000)
+                except Exception as e:
+                    self.log("等待 GitHub 跳转超时，可能卡在授权页，强制继续...", "WARN")
+                # ==============================================================
+                
                 self.shot(page, "点击后")
                 url = page.url
                 self.log(f"当前: {url}")
