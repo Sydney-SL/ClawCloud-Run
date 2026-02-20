@@ -915,14 +915,23 @@ class AutoLogin:
                 # 3. GitHub 登录
                 self.log("步骤3: GitHub 认证", "STEP")
                 
-                if 'github.com/login' in url or 'github.com/session' in url:
+                # ⚠️ 修复逻辑陷阱：必须优先判断是否为授权页，因为它的 URL 也包含 'login'
+                if 'github.com/login/oauth/authorize' in url:
+                    self.log("检测到 OAuth 授权确认页，准备点击...", "SUCCESS")
+                    self.oauth(page)
+                    
+                    # 授权后等待一下跳转，并更新当前的 url 变量供后续步骤使用
+                    try:
+                        page.wait_for_load_state('load', timeout=20000)
+                    except:
+                        pass
+                    url = page.url 
+                    
+                elif 'github.com/login' in url or 'github.com/session' in url:
                     if not self.login_github(page, context):
                         self.shot(page, "登录失败")
                         self.notify(False, "GitHub 登录失败")
                         sys.exit(1)
-                elif 'github.com/login/oauth/authorize' in url:
-                    self.log("Cookie 有效", "SUCCESS")
-                    self.oauth(page)
                 
                 # 4. 等待重定向（会自动检测区域）
                 self.log("步骤4: 等待重定向", "STEP")
